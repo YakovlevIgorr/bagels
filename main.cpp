@@ -1,5 +1,7 @@
 #include <iostream>
 #include <ctime>
+#include <sstream>
+#include <string>
 
 std::string fermi(std::string guess_number, std::string usr_number, int number_of_digit){
     int count = 0;
@@ -70,6 +72,8 @@ int main() {
 
     std::string exit = "1";
     std::string start = "2";
+     std::system("chcp 1251");
+    std::system("cls");
 
 
     std::cout << "Приветствуем Вас в игре Быки и коровы!\n";
