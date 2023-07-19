@@ -53,12 +53,16 @@ bool input_usr(std::string input, int number_of_digit = 1){
 
 } //проверка на правильность ввода
 
-std::string random_guess(int number_of_digit){
+std::string random_guess(int number_of_digit) {
     srand(time(nullptr));
-    number_of_digit = pow(10,number_of_digit);
-    return std::to_string (rand() % number_of_digit);
+    std::string total_output = "";
+    for (int i = 0; i < number_of_digit; i++) {
+        total_output = total_output + std::to_string(rand() % 10);
+    }
+    //number_of_digit = pow(10, number_of_digit);
+    return total_output;
 
-}// генерирует число // ОШИБКА иногда генерирует на один знак меньше
+}// генерирует число 
 
 std::string error_input(int number_of_digit){
     if(number_of_digit == 1) return  std::to_string(number_of_digit) + " цифру\n";
