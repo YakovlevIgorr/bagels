@@ -38,10 +38,11 @@ std::string pico(std::string guess_number, std::string usr_number, int number_of
 
 bool input_usr(std::string input, int number_of_digit = 1){
     bool flag = true;
-    char* check_input = const_cast<char*>(input.c_str());
+
+    //char* check_input = const_cast<char*>(input.c_str());
     if(input.size() == number_of_digit) {
-        for (int i = 0; i < strlen(check_input); i++) {
-            if(!isdigit(check_input[i])) {
+        for (int i = 0; i < input.size(); i++) {
+            if(!isdigit(input[i])) {
                 flag = false;
             }
         }
