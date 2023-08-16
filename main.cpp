@@ -266,6 +266,8 @@ int main() {
 
     std::string exit = "1";
     std::string start = "3";
+    std::system("chcp 1251");
+    std::system("cls");
     Guessing guessing;
 
 
