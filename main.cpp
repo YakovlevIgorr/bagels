@@ -1,8 +1,43 @@
 #include <iostream>
 #include <ctime>
-#include <string>
 #include <iomanip>
 #include <sstream>
+#include "windows.h"
+//Поключаем звук
+//сначала vorbis только дефайны
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"    
+
+//теперь весь миниаудио, подтягивает дефайны ворбиса
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
+
+//vorbis реализацию
+#undef STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"   
+
+//наш звуковой движок
+static ma_engine snd_engine;
+
+//инициализация звука
+bool initSound()
+{
+    ma_result result = ma_engine_init(NULL, &snd_engine);
+    if (result != MA_SUCCESS) {
+        std::cout << "Failed init sound engine\n";
+        return false;  // Failed to initialize the engine.
+    }
+    return true;
+}
+
+//играем мелодию
+void playSound(std::string sound_file_name)
+{
+    ma_result result = ma_engine_play_sound(&snd_engine, sound_file_name.c_str(), NULL);
+    if (result != MA_SUCCESS) {
+        std::cout << "Failed play sound "<< sound_file_name<<"\n";
+    }
+}
 
 
 
@@ -12,6 +47,8 @@ std::string fermi(std::string guess_number, std::string usr_number, int number_o
     for (int i = 0; i < number_of_digit; i++) {
         if (guess_number[i] == usr_number[i]) {
             count++;
+            playSound("bull.wav");
+            Sleep(1000);/////////////////////
         }
     }
     if (count > 1 && count < 5) return std::to_string(count) + " быка";
@@ -35,6 +72,10 @@ std::string pico(std::string guess_number, std::string usr_number, int number_of
         }
     }
     count = count - std::stoi(bull);//сколько коров
+    for (int i = 0; i < count; i++) {
+        playSound("cow.wav");
+        Sleep(1000);
+    }
     if (count > 1 && count < 5) return std::to_string(count) + " коровы";
     else if (count > 4 || count == 0) return std::to_string(count) + " коров";
     return std::to_string(count) + " " + output;
@@ -62,9 +103,7 @@ std::string random_guess(int number_of_digit, int qwest = 0) {
     for (int i = 0; i < number_of_digit; i++) {
         total_output = total_output + std::to_string(rand() % 10);
     }
-    if (qwest == 1 && total_output[0] == '0') {
-        total_output[0] = '1';
-    }
+    if (qwest == 1 && total_output[0] == '0') total_output[0] = '1';
     return total_output;
 }
 std::string error_input(int number_of_digit) {
@@ -190,7 +229,7 @@ void text_out_quest(int various) {
             " стал бодрым и более взрослым. Он аккуратно поставил самокат на место, закрыл гараж и"
             " покатил в свою жизнь с новыми мыслями и новым настроением. Иногда хорошо побыть с "
             "самим собой и своими воспоминаниями наедине. Спасибо, милый друг, что был с нами на "
-            "протяжении игры.\n До свидания!";
+            "протяжении игры. До свидания!";
         break;
     case 12:
         std::cout << "на самом деле, все должно было получиться, попробуй еще раз.\n";
@@ -202,14 +241,14 @@ class Guessing {//принимает количество цифр и загад
 public:
     std::string* save_number = new std::string[20];
     std::string* aim = new std::string[20];
-    std::string* near = new std::string[20];
+    std::string* near_ = new std::string[20]; //совпадает с дефайнами студии far/near, поэтому переименовал
     std::string user_number = "";
     int quest_or_not = 0;
     std::string fermi_number;
     std::string pico_number;
     int exit = 0;
 
-    void guess(int number_of_digit, std::string guess_number) {
+    void guess(int number_of_digit, std::string guess_number, int qwest = 0) {
 
         for (int i = 1; i < 21; i++) {//21
             std::cout << "\nПопытка №" << i << "   " << ">";
@@ -228,7 +267,7 @@ public:
                     }
                     repit = (repit >= i) ? i - 1 : repit;
                     for (int s = i - repit; s < i; s++) {
-                        std::cout << aim[s - 1] + ",   " + save_number[s - 1] + ",   " + near[s - 1] + "\n";
+                        std::cout << aim[s - 1] + ",   " + save_number[s - 1] + ",   " + near_[s - 1] + "\n";
                     }
                 }
                 i = i - 1;
@@ -237,6 +276,7 @@ public:
 
 
             if (!input_usr(user_number, number_of_digit)) {
+                playSound("wrong_input.mp3");//music
                 std::cout << "Неправильный ввод, введите " << error_input(number_of_digit) << "\n";
                 i = i - 1;
                 continue;
@@ -246,21 +286,24 @@ public:
                 fermi_number = fermi(guess_number, user_number, number_of_digit);
                 pico_number = pico(guess_number, user_number, number_of_digit, fermi_number);
                 aim[i - 1] = fermi_number;
-                near[i - 1] = pico_number;
+                near_[i - 1] = pico_number;
                 std::cout << fermi_number + ",   " + user_number + ",   " + pico_number + "\n";
+              
             }
             if ((fermi_number[0] - '0') == number_of_digit) {
                 (quest_or_not == 0 ? std::cout << "Победа! Число угадано верно.\n\n" : std::cout << "\n");
+                if(qwest == 1) playSound("win_single.wav");
                 i = 21;
 
             }
 
             if (i == 20) {
+                playSound("20_attempt.wav");//music
                 (quest_or_not == 0 ? std::cout << "Попытки закончены. Загаданное число "
                     << guess_number << "\n" : std::cout << "на самом деле, все должно было получиться, "
                     "попробуй еще раз.\n");
+                Sleep(5000);
                 this->exit = 1;
-
             }
 
         }
@@ -269,10 +312,11 @@ public:
 
 int main() {
 
-
+    initSound();//инициализируем звуковой движок
+    
     std::string exit = "1";
-    std::string start = "3";
-    std::system("chcp 1251");
+    std::string start = "2";
+    std::system("chcp 65001"); //исходники поидее в UTF-8, надо выводить в консоль также
     std::system("cls");
     Guessing guessing;
 
@@ -280,6 +324,7 @@ int main() {
     std::cout << "Приветствуем Вас в игре Быки и коровы!\n";
     while (start != "5") {
         exit = "1";
+        if (start != "3" && start != "4") playSound("cheerful.wav");//music
         std::cout << "\nВыберите пункт меню:\n";
         std::cout << "1. Начать игру\n2. Начать сюжетную игру\n3. Правила игры\n4. Об авторе\n5. Выход\n>";
         getline(std::cin, start);
@@ -303,18 +348,22 @@ int main() {
             guessing.quest_or_not = 1;
             int passing[11] = { 3, 2, 5, 6, 2, 4, 4, 6, 7, 8, 9 };
 
+            playSound("happy.mp3");//music
+           
             std::cout << "Привет в этой игре тебе нужно будет помогать нашему герою Ренди, решать "
                 "задачи, которые встречаються у него на пути. Удачи Вам!\n\n";
             for (int i = 0; i < 12; i++) {
                 if (guessing.exit == 1) break;
+                playSound("happy.mp3");//music
                 text_out_quest(i);
                 if (i < 11) {
                     if (i == 1) std::cout << "\nНачнем с этажа (2 цифры)\n";
-                    guessing.guess(passing[i], random_guess(passing[i],1));
+                    guessing.guess(passing[i], random_guess(passing[i], 1));
                     if (guessing.exit == 1) break;
                     if (i == 1) {
+                        playSound("happy.mp3");//music 
                         std::cout << "\nА теперь квартира (3 цифры)\n";
-                        guessing.guess(3, random_guess(3,1));
+                        guessing.guess(3, random_guess(3, 1));
                     }
                 }
             }
@@ -330,7 +379,7 @@ int main() {
                 std::string string_number_of_digit = "";
 
                 while (true) {
-
+                    playSound("start_single.wav");//music/////надо найти музыку
                     std::cout << "Какое количество цифр желаете отгадывать? Не более 9. >";
                     getline(std::cin, string_number_of_digit);
 
@@ -338,6 +387,7 @@ int main() {
                         number_of_digit = std::stoi(string_number_of_digit);
                     }
                     else {
+                        playSound("wrong_input.mp3");//music
                         std::cout << "Попробуйте еще раз.\n";
                         continue;
                     }
@@ -350,13 +400,14 @@ int main() {
                         break;
                     }
                     else {
+                        playSound("wrong_input.mp3");//music
                         std::cout << "Попробуйте еще раз.\n";
                     }
                 }
 
                 std::cout << "Хорошо, пора начинать. Я загадал число. Удачи!" << std::endl;
 
-                guessing.guess(number_of_digit, guess_number);
+                guessing.guess(number_of_digit, guess_number, 1);
                 if (guessing.exit == 0) {
                     std::cout << "Играем дальше? - 1, Выход в главное меню - остальное >";
                     getline(std::cin, exit);
@@ -364,14 +415,19 @@ int main() {
                 else {
                     exit = "2";
                     guessing.exit = 0;
+                 
+
                 }
 
             }
         }
+        
     }
+   
     delete[] guessing.save_number;
     delete[] guessing.aim;
-    delete[] guessing.near;
+    delete[] guessing.near_;
     std::cout << "До свидания!";
+    playSound("exit_game.wav");
     return 0;
 }
